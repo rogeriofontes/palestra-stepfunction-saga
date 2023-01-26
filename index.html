@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+
+	<title>Usando SAGA com AWS Step Function</title>
+
+	<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+	<meta name="author" content="Hakim El Hattab">
+
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+	<meta name="viewport"
+		content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+	<link rel="stylesheet" href="css/reveal.css">
+	<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+	<!-- Code syntax highlighting -->
+	<link rel="stylesheet" href="lib/css/zenburn.css">
+
+	<!-- Printing and PDF exports -->
+	<script>
+		var link = document.createElement('link');
+		link.rel = 'stylesheet';
+		link.type = 'text/css';
+		link.href = window.location.search.match(/print-pdf/gi) ? 'css/print/pdf.css' : 'css/print/paper.css';
+		document.getElementsByTagName('head')[0].appendChild(link);
+	</script>
+
+	<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+</head>
+
+<body>
+
+	<div class="reveal">
+
+		<!-- Any section element inside of this container is displayed as a slide -->
+		<div class="slides">
+			<section>
+				<img data-src="img/stepfunction.png" width="600" height="300">
+				<h4>Usando SAGA com AWS Step Function</h4>
+				<p>
+					<small>Palestrante: <a href="http://rogeriofontes.inf.br" target="_blank">Rogério Fontes</a> / <a
+							href="http://twitter.com/rogeriofontes" target="_blank">@rogeriofontes</a></small>
+				</p>
+			</section>
+
+			<section>
+				<h5>Sobre o palestrante:</h5>
+				<p><span style="font-size:24px">APAIXONADO EM MANEIRAS E FORMAS ÁGEIS DE CRIAR CÓDIGO FONTE.
+						PROGRAMANDO SEMPRE TOMANDO UM BOM CAFÉ E ESCUTANDO UM BELO E PESADO ROCK`N ROLL.
+						TRABALHA A MAIS DE 18 ANOS COM JAVA E LINUX, PASSANDO POR ANDROID, PYTHON, PHP, NODE.JS e GO.
+						PROFESSOR UNIVERSITÁRIO DE REDES DE COMPUTADORES, JAVA E DISPOSITIVOS MÓVEIS.
+						JUGLEADER E CO-FUNDADOR DO UAIJUG (GRUPO DE USUÁRIOS JAVA DO TRIÂNGULO MINEIRO) E DO TRIÂNGULO
+						HACKERSPACE E AGORA DO AWS USER GROUP DO TRIÂNGULO MINEIRO.
+						ARQUITETO ESPECIALISTA JAVA/AWS E ENGENHEIRO DE MORDENIZAÇÃO - NTTDATA/ITAÚ E APAIXONADO POR ESTUDOS MÚSICAIS. 🤟 🎸 🥁</p>
+			</section>
+
+			<section>
+				<section>
+					<h5>UaiJUG</h5>
+					<p><a href="http://www.uaijug.com.br/" target="_blank"><img data-src="img/uaijug-300.png" width="300" height="300"></a></p>
+				</section>
+				<section>
+					<h5>Triângulo Mineiro:</h5>
+					<p><a href="http://www.triangulohackerspace.net.br/" target="_blank"><img data-src="img/ths.png" width="300" height="250"></a></p>
+				</section>
+				<section>
+					<h5>AWS User Group Triangulo Mineiro</h5>
+					<p><a href="https://www.meetup.com/pt-BR/aws-user-group-triangulo-mineiro/" target="_blank"><img data-src="img/aws-ug-triangulomineiro.jpeg" width="600" height="300"></a></p>
+				</section>
+			</section>
+
+			<section>
+				<h5>SAGA (ou padrão Saga)</h5>
+				<p><span style="font-size:24px">É um padrão de design usado para gerenciar transações ou processos de execução longa que são compostos de várias subtransações.</span></p>
+			</section>
+
+			<section>
+				<section>
+					<h5>SAGA significa "Saga State"</h5>
+					<p><span style="font-size:24px">
+						Representa uma sequência de transações locais que são coordenadas para atingir um processo de negócios maior e de longa duração.
+						</span></p>
+				</section>
+				<section>
+					<h5>Padrão SAGA</h5>
+					<p><span style="font-size:24px">
+						O padrão garante que todas as subtransações sejam concluídas ou compensadas, de modo que o processo geral seja eventualmente consistente.
+						</span></p>
+				</section>
+				<section>
+					<h5>Tratamento de falhas</h5>
+					<p><span style="font-size:24px">
+						Isso permite que o sistema trate falhas ou erros que possam ocorrer durante a execução do processo.
+						</span></p>
+				</section>
+			</section>
+			
+			<section>
+				<h5>Transações</h5>
+				<p><span style="font-size:24px">
+					Os padrões de saga oferecem a criação de um conjunto de transações que atualizam os microsserviços sequencialmente e publicam eventos para acionar a próxima transação para os próximos microsserviços. Se uma das etapas falhar, os padrões de saga são acionados para transações de reversão, que basicamente fazem operações reversas com a publicação de eventos de reversão para microsserviços anteriores.
+					</span></p>
+			</section>
+
+			<section>
+				<h5>Consistência de Dados</h5>
+				<p><span style="font-size:24px">
+					O padrão saga é fornecido para gerenciar a consistência de dados entre microsserviços em casos de transações distribuídas e com isso Gerenrenciar Transações Distribuídas entre esses microsserviços.
+					</span></p>
+			</section>
+
+			<section>
+				<section>
+					<h5>Princípios do SAGA</h5>
+					<p><span style="font-size:24px">
+						Alguns princípios são usados ​​dentro do padrão Saga, como padrão de pub/sub com brokers ou padrões de composição de API.
+						</span></p>
+				</section>
+				<section>
+					<h5>Princípios do SAGA</h5>
+					<p><span style="font-size:24px">
+						O padrão saga fornece gerenciamento de transações usando uma sequência de transações locais de microsserviços. Cada microsserviço possui seu próprio banco de dados e pode gerenciar transações locais de maneira atômica com consistência estrita.
+						</span></p>
+				</section>
+				<section>
+					<h5>Princípios do SAGA</h5>
+					<p><span style="font-size:24px">
+						Saga agrupa essas transações locais e invoca sequencialmente uma a uma. Cada transação local atualiza o banco de dados e publica um evento para acionar a próxima transação local. Se uma das etapas falhar, os padrões saga acionam transações de reversão que são um conjunto de transações de compensação que revertem as alterações nos microsserviços anteriores e restauram a consistência dos dados.
+						</span></p>
+				</section>
+			</section>
+
+			<section>
+				<h5>Gerenciamento de transações</h5>
+				<p><span style="font-size:24px">
+					Gerenciamento de transações é realmente difícil quando se trata de arquiteturas de microsserviços. Para implementar transações entre vários microsserviços e manter a consistência dos dados, devemos seguir o padrão SAGA. O padrão Saga tem duas abordagens diferentes:
+					</span></p>
+			</section>
+
+			<section>
+				<section>
+					<h5>Choreography Saga</h5>
+					<p><span style="font-size:24px">
+						É uma variação do padrão Saga que se concentra na coordenação de serviços, em vez da coordenação de transações. Nesse padrão, cada serviço é responsável por manter seu próprio estado e por se comunicar com outros serviços para coordenar a execução do processo geral.
+						</span></p>
+				</section>
+				<section>
+					<h5>Choreography Saga</h5>
+					<p><span style="font-size:24px">
+						A principal diferença entre o Choreography Saga e o padrão tradicional do Saga é que, no Choreography Saga, os serviços se comunicam entre si como pares, em vez de por meio de um coordenador central. Isso permite uma abordagem mais descentralizada e flexível para gerenciar processos de execução longa. Além disso, o Choreography Saga permite tratamento e recuperação de erros mais granulares, pois cada serviço pode lidar com suas próprias falhas e erros.
+						</span></p>
+				</section>
+				<section>
+					<h5>Choreography Saga</h5>
+					<p><span style="font-size:24px">
+						É importante observar que o Choreography Saga não é um padrão padrão e não é um conceito bem definido, é apenas uma maneira de descrever uma abordagem diferente para usar o padrão Saga.
+						</span></p>
+				</section>
+				<section>
+					<h5>Choreography Saga</h5>
+					<img data-src="img/step-functions-diagrams-ChoreographySAGA.png" width="600" height="400">
+				</section>
+			</section>
+
+			<section>
+				<section>
+					<h5>Orchestration Saga</h5>
+					<p><span style="font-size:24px">
+						É uma variação do padrão Saga que se concentra na coordenação de transações, em vez da coordenação de serviços. Nesse padrão, um coordenador central é responsável por gerenciar todo o processo e coordenar a execução das subtransações. Isso permite uma abordagem mais centralizada e controlada para gerenciar processos de execução longa.
+						</span></p>
+				</section>
+				<section>
+					<h5>Orchestration Saga</h5>
+					<p><span style="font-size:24px">
+						A principal diferença entre o Orchestration Saga e o padrão Saga tradicional é que, no Orchestration Saga, o coordenador é responsável por manter o estado global do processo e por garantir que todas as subtransações sejam concluídas ou compensadas. O coordenador também gerencia a comunicação entre os diferentes serviços envolvidos no processo, sendo responsável pelo tratamento e recuperação de erros.
+						</span></p>
+				</section>
+				<section>
+					<h5>Orchestration Saga</h5>
+					<p><span style="font-size:24px">
+						Assim como no Choreography Saga, é importante observar que Orchestration Saga não é um padrão padrão e não é um conceito bem definido, é apenas uma maneira de descrever uma abordagem diferente para usar o padrão Saga.
+						</span></p>
+				</section>
+				<section>
+					<h5>Orchestration Saga</h5>
+					<img data-src="img/step-functions-diagrams-OrchestrationSAGA.png" width="600" height="400">
+				</section>
+			</section>
+
+			<section>
+				<h5>SAGA Fail</h5>
+				<img data-src="img/step-functions-diagrams-Fail.png" width="600" height="400">
+			</section>
+
+			<section>
+				<section>
+					<h5>A Step Function</h5>
+					<p><span style="font-size:24px">
+						É uma serviço do AWS que permite definir, executar e monitorar workflows de aplicativos de maneira visual. Ele permite que você modelar processos de negócios e aplicativos de trabalho como uma série de passos gerenciáveis, chamados de "estados".
+						</span></p>
+				</section>
+				<section>
+					<p><span style="font-size:20px">
+						Para criar uma Step Function, você precisa seguir os seguintes passos:
+						<ul style="font-size:18px">
+							<li>Acesse o Console do AWS Step Functions</li>
+							<li>Clique em "Create state machine" para criar uma nova máquina de estado</li>
+							<li>Escolha o "Author with the AWS Step Functions visual editor"</li>
+							<li>Escolha um nome e uma descrição para sua máquina de estado</li>
+							<li>Defina sua máquina de estado, adicionando estados e transições entre eles. Utilize o editor visual para desenhar sua máquina de estado</li>
+							<li>Configure as ações de cada estado, especificando as tarefas a serem executadas e os parâmetros para cada uma delas</li>
+							<li>Salve e execute sua máquina de estado</li>
+							<li>Monitorar o estado da execução da máquina de estado, verificando o status de cada estado e os resultados das ações</li>
+							<li>Uma vez criada, sua Step Function pode ser chamada programaticamente usando o SDK AWS ou a CLI, para ser acionada por eventos ou por outros serviços AWS</li>
+						</ul>
+						</span></p>
+				</section>
+			</section>
+
+			<section>
+				<section>
+					<h5>A Step Function</h5>
+					<p><span style="font-size:24px">
+						É uma serviço do AWS que permite definir, executar e monitorar workflows de aplicativos de maneira visual. Ele permite que você modelar processos de negócios e aplicativos de trabalho como uma série de passos gerenciáveis, chamados de "estados".
+						</span></p>
+				</section>
+				<section>
+					<p><span style="font-size:20px">
+						Para escrever um aplicativo simples para criar uma ordem de pagamento usando uma máquina de estado, você precisará seguir estas etapas gerais:
+						<ul style="font-size:18px">
+							<li>Crie uma nova máquina de estado no console do AWS Step Functions.</li>
+							<li>Defina os estados que sua máquina de estado terá. Por exemplo, você pode ter estados para "Pedido criado", "Pagamento inicializado", "Pagamento confirmado", "Pedido confirmado" e "Pedido concluído".</li>
+							<li>Defina as transições entre os estados. Por exemplo, o estado "Pedido criado" pode mudar para o estado "Pagamento inicializado" quando um usuário envia um pedido, e o estado "Pagamento confirmado" pode mudar para o estado "Pedido confirmado" quando o pagamento for processado com sucesso.</li>
+							<li>Configure as ações que serão realizadas em cada estado. Por exemplo, no estado "Pagamento inicializado", você pode chamar uma API para inicializar um pagamento e, no estado "Pedido confirmado", pode chamar uma API para confirmar o pedido.</li>
+							<li>Escreva o código para seu aplicativo. Isso provavelmente envolverá o uso do SDK da AWS para chamar a API do AWS Step Functions para iniciar e interagir com sua máquina de estado.</li>
+							<li>Teste seu aplicativo iniciando sua máquina de estado e garantindo que ela progrida pelos estados conforme o esperado.</li>
+							<li>Assim que seu aplicativo estiver funcionando corretamente, implante-o no ambiente desejado, pode ser AWS Lambda, instância do EC2 ou outro serviço.</li>
+							<li>Vale a pena notar que esta é uma visão geral e dependendo da complexidade do aplicativo você pode precisar considerar outros aspectos, como tratamento de erros, segurança, monitoramento, etc.</li>
+						</ul>
+						</span></p>
+				</section>
+			</section>
+			
+			<section>
+				<section>
+					<h5>Exemplo de workflow</h5>
+					<p><span style="font-size:24px">
+						Exemplo de uma máquina de estado simples do AWS Step Functions escrita na Amazon States Language (ASL), que define uma máquina de estado que cria uma ordem de pagamento:
+						</span></p>
+				</section>
+				<section>
+					<h5>Exemplo de workflow</h5>
+					<p ><span style="font-size:18px">Criado pelo ChatGPT</span>
+<pre style="font-size:14px">
+	{
+		"Comment": "Create Payment Order State Machine",
+		"StartAt": "Order Created",
+		"States": {
+		  "Order Created": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:us-west-2:1234567890:function:createOrder",
+			"Next": "Payment Initialized"
+		  },
+		  "Payment Initialized": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:us-west-2:1234567890:function:initializePayment",
+			"Next": "Payment Confirmed"
+		  },
+		  "Payment Confirmed": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:us-west-2:1234567890:function:confirmPayment",
+			"Next": "Order Confirmed"
+		  },
+		  "Order Confirmed": {
+			"Type": "Task",
+			"Resource": "arn:aws:lambda:us-west-2:1234567890:function:confirmOrder",
+			"End": true
+		  }
+		}
+	  }
+</pre>
+					</p>
+				</section>
+			</section>
+
+			<section>
+				<h5>Nosso Exemplo no Step Function</h5>
+				<p><span style="font-size:14px"><a href="https://gist.github.com/pepesantos/42aed7aaa5f2edc6c15e" target="_target">https://gist.github.com/pepesantos/42aed7aaa5f2edc6c15e</a></span>
+				<img data-src="img/step-functions-diagrams-Ordem-StepFunction.png" width="600" height="530"></p>
+			</section>
+
+			<section>
+				<img data-src="img/demo.jfif" width="250" header="200">
+			</section>
+
+			<section>
+				<img data-src="img/thanks.jpg" width="250" header="200">
+			</section>
+
+			<!--section>
+				<section>
+					<span style="font-size:20px">
+						<a href="https://seginfo.com.br/2021/09/16/owasp-top-10-liberadas-as-vulnerabilidades-principais-de-2021/"
+							target="_blank">https://seginfo.com.br/2021/09/16/owasp-top-10-liberadas-as-vulnerabilidades-principais-de-2021/</a><br />
+						<a href="https://www.hacksplaining.com/owasp"
+							target="_blank">https://www.hacksplaining.com/owasp</a><br />
+					</span>
+				</section>
+			</section-->
+		</div>
+
+	</div>
+
+	<script src="lib/js/head.min.js"></script>
+	<script src="js/reveal.js"></script>
+
+	<script>
+
+		// Full list of configuration options available at:
+		// https://github.com/hakimel/reveal.js#configuration
+		Reveal.initialize({
+			controls: true,
+			progress: true,
+			history: true,
+			center: true,
+
+			transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+			// Optional reveal.js plugins
+			dependencies: [
+				{ src: 'lib/js/classList.js', condition: function () { return !document.body.classList; } },
+				{ src: 'plugin/markdown/marked.js', condition: function () { return !!document.querySelector('[data-markdown]'); } },
+				{ src: 'plugin/markdown/markdown.js', condition: function () { return !!document.querySelector('[data-markdown]'); } },
+				{ src: 'plugin/highlight/highlight.js', async: true, callback: function () { hljs.initHighlightingOnLoad(); } },
+				{ src: 'plugin/zoom-js/zoom.js', async: true },
+				{ src: 'plugin/notes/notes.js', async: true }
+			]
+		});
+
+	</script>
+
+</body>
+
+</html>
